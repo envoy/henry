@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-from .modules.lookerapi import LookerApi
+from modules.lookerapi import LookerApi
 import argparse
 import os
 import errno
 import sys
-from .modules.spinner import Spinner
-from .modules.auth import authenticate
+from modules.spinner import Spinner
+from modules.auth import authenticate
 import logging.config
 import henry
-from pathlib import PosixPath
 import json
 import uuid
-from . import __version__ as pkg
+import __version__ as pkg
 LOGGING_CONFIG_PATH = os.path.join(os.path.dirname(henry.__file__),
                                    '.support_files/logging.conf')
 METADATA_PATH = os.path.join(os.path.expanduser('~'), '.henry')
@@ -30,9 +29,9 @@ LOGGING_LOG_PATH = os.path.join(LOGGING_LOG_PATH, 'henry.log')
 logging.config.fileConfig(LOGGING_CONFIG_PATH,
                           defaults={'logfilename': LOGGING_LOG_PATH},
                           disable_existing_loggers=False)
-from .commands.analyze import Analyze
-from .commands.vacuum import Vacuum
-from .commands.pulse import Pulse
+from commands.analyze import Analyze
+from commands.vacuum import Vacuum
+from commands.pulse import Pulse
 
 logger = logging.getLogger('main')
 # sys.tracebacklimit = -1 # enable only on shipped release
@@ -42,21 +41,24 @@ def main():
     logger.info('Starting henry')
     HELP_PATH = os.path.join(os.path.dirname(henry.__file__),
                              '.support_files/help.rtf')
-    with open(HELP_PATH, 'r', encoding='unicode_escape') as myfile:
+    with open(HELP_PATH, 'r') as myfile:
         descStr = myfile.read()
 
     # load custom config settings if defined in ~/.henry/henry.json
-    settings_file = PosixPath(os.path.join(METADATA_PATH, 'settings.json')).expanduser()
+    settings_file = os.path.join(os.getcwd(),'settings.json')
     timeout = 120
-    config_path = PosixPath.cwd().joinpath('config.yml')
-    if settings_file.is_file():
+    config_path = os.path.join(os.getcwd(),'config.yml')
+    if settings_file:
         with open(settings_file, 'r') as f:
             settings = json.load(f)
             timeout = settings.get('api_conn_timeout', timeout)
+            host = settings.get('host')
+            client_id = settings.get('client_id')
+            client_secret = settings.get('client_secret')
             if type(timeout) is list:
                 timeout = tuple(timeout)
             config_path = settings.get('config_path', config_path)
-        logger.info(f'Loaded config settings from ~/.henry/settings.json, {settings}')
+        logger.info('Loaded config settings from ~/.henry/settings.json, {settings}')
     else:
         logger.info('No custom config file found. Using defaults.')
 
@@ -67,7 +69,6 @@ def main():
         usage='henry command subcommand '
               '[subcommand options] [global '
               'options]',
-        allow_abbrev=False,
         add_help=False)
 
     subparsers = parser.add_subparsers(dest='command',
@@ -231,9 +232,9 @@ def main():
                                help='Show results in a table format '
                                     'without the gridlines')
         subparser.add_argument_group("Authentication")
-        subparser.add_argument('--host', type=str, default='looker',
+        subparser.add_argument('--host', type=str, default=host,
                                required=any(k in sys.argv for k in
-                                            ['--client_id', '--cliet_secret',
+                                            [client_id, client_secret,
                                              '--alias']),
                                help=argparse.SUPPRESS)
         subparser.add_argument('--port', type=int, default=19999,
@@ -275,22 +276,21 @@ def main():
         cmd = args['command']+' '+args['which']
     else:
         cmd = args['command']
-    session_info = f'Henry v{pkg.__version__}: cmd={cmd}' \
-                   f', sid=#{uuid.uuid1()}'
-    looker = authenticate(timeout, session_info, config_path, **auth_args)
+    session_info = 'Henry v{pkg.__version__}: cmd={cmd}' \
+                   ', sid=#{uuid.uuid1()}'
 
+    looker = authenticate(timeout, session_info, config_path, **auth_args)
     # map subcommand to function
     if args['command'] in ('analyze', 'vacuum'):
         if args['which'] is None:
             parser.error("No command")
         else:
-            with Spinner():
-                if args['command'] == 'analyze':
-                    analyze = Analyze(looker)
-                    result = analyze.analyze(**args)
-                else:
-                    vacuum = Vacuum(looker)
-                    result = vacuum.vacuum(**args)
+            if args['command'] == 'analyze':
+                analyze = Analyze(looker)
+                result = analyze.analyze(**args)
+            else:
+                vacuum = Vacuum(looker)
+                result = vacuum.vacuum(**args)
         # silence outout if --silence flag is used
         if not args['quiet']:
             print(result)
@@ -328,7 +328,6 @@ def main():
             except Exception as e:
                 logger.error(e)
                 raise(e)
-
 
 if __name__ == "__main__":
     main()

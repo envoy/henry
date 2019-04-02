@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 import logging
 from henry.modules import styler
 from henry.modules.fetcher import Fetcher as fetcher
@@ -6,7 +7,7 @@ import re
 
 class Vacuum(fetcher):
     def __init__(self, looker):
-        super().__init__(looker)
+        super(Vacuum,self).__init__(looker)
         self.vacuum_logger = logging.getLogger('vacuum')
 
     def vacuum(self, **kwargs):

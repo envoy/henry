@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 import logging
 import re
 import requests
@@ -26,14 +27,14 @@ class Pulse(object):
         self.pulse_logger.info('Checking instance pulse')
         self.pulse_logger.info('Checking Connections')
         result = self.check_connections()
-        print(result, end='\n\n')
+        print(result)
         self.pulse_logger.info('Complete: Checking Connections')
 
         self.pulse_logger.info('Analyzing Query Stats')
         r1, r2, r3 = self.check_query_stats()
         print(r1)
         print(r2)
-        print(r3, end='\n\n')
+        print(r3)
         self.pulse_logger.info('Complete: Analyzing Query Stats')
 
         # check scheduled plans
@@ -51,10 +52,10 @@ class Pulse(object):
                                       tablefmt='psql', numalign='center')
                 t.postfix[0]["value"] = 'DONE'
                 t.update()
-        print(result, end='\n\n')
+        print(result)
         if fail_flag == 1:
             print('Navigate to /admin/scheduled_jobs on your instance for '
-                  'more details', end='\n\n')
+                  'more details')
         self.pulse_logger.info('Complete: Analyzing Scheduled Plans')
 
         # check enabled legacy features
@@ -65,7 +66,7 @@ class Pulse(object):
                 result = self.check_legacy_features()
                 t.postfix[0]["value"] = 'DONE'
                 t.update()
-        print(result, end='\n\n')
+        print(result)
         self.pulse_logger.info('Complete: Checking Legacy Features')
 
         # check looker version
@@ -76,7 +77,7 @@ class Pulse(object):
             result = self.check_version()
             t.postfix[0]["value"] = "DONE"
             t.update()
-        print(result, end='\n\n')
+        print(result)
         self.pulse_logger.info('Complete: Checking Version')
         self.pulse_logger.info('Complete: Checking instance pulse')
 

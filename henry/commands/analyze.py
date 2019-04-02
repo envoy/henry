@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 import logging
 from henry.modules.fetcher import Fetcher as fetcher
 from henry.modules import styler
@@ -7,7 +8,7 @@ import json
 
 class Analyze(fetcher):
     def __init__(self, looker):
-        super().__init__(looker)
+        super(Analyze,self).__init__(looker)
         self.analyze_logger = logging.getLogger('analyze')
 
     def analyze(self, **kwargs):
@@ -87,11 +88,19 @@ class Analyze(fetcher):
     def _analyze_models(self, project=None, model=None,
                         sortkey=None, limit=None,
                         timeframe=90, min_queries=0):
+        print('fetching all models...')
         models = fetcher.get_models(self, project=project,
                                     model=model, verbose=1)
+        print('complete.')
+        print('fetching used models...')
         used_models = fetcher.get_used_models(self, timeframe, min_queries)
+        print('complete.')
         info = []
+
+        total = len(used_models)
+        complete = 1
         for m in models:
+            print('Processing {} of {} models'.format(complete,total))
             explore_count = len(m['explores'])
             if m['name'] in used_models:
                 query_run_count = used_models[m['name']]
@@ -107,6 +116,7 @@ class Analyze(fetcher):
                 'unused_explores': len(unused_explores),
                 'query_run_count': query_run_count
             })
+            complete += 1
         valid_values = list(info[0].keys())
         info = styler.sort(info, valid_values, sortkey)
         info = styler.limit(info, limit=limit)
@@ -115,11 +125,18 @@ class Analyze(fetcher):
     def _analyze_explores(self, model=None, explore=None,
                           sortkey=None, limit=None,
                           min_queries=0, timeframe=90):
+        print('fetching...')
         explores = fetcher.get_explores(self, model=model,
                                         explore=explore, verbose=1)
+        print('fetching explores complete')
         explores_usage = {}
         info = []
+        total = len(explores)
+        completed = 0
         for e in explores:
+            print('Parsing {}, {} of {} explores'.format(completed,
+                                                        e['model_name'],
+                                                        total))
             # in case explore does not exist (bug - #32748)
             if e is None:
                 pass
@@ -161,6 +178,7 @@ class Analyze(fetcher):
                     'unused_fields': len(unused_fields),
                     'query_count': query_count
                 })
+                completed += 1
 
         if not info:
             self.analyze_logger.error('No matching explores found')
