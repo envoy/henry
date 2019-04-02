@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 import threading
 import sys
 import time
@@ -6,7 +7,7 @@ import time
 class SpinnerThread(threading.Thread):
 
     def __init__(self):
-        super().__init__(target=self._spin)
+        super(SpinnerThread,self).__init__(target=self._spin)
         self._stopevent = threading.Event()
 
     def stop(self):

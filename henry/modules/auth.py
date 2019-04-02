@@ -1,8 +1,11 @@
+#!/usr/local/bin/python3
 import os
 import logging
 import yaml
 import sys
 from .lookerapi import LookerApi
+import json
+
 
 auth_logger = logging.getLogger('auth')
 
@@ -10,29 +13,35 @@ auth_logger = logging.getLogger('auth')
 # returns an instanstiated Looker object using the
 # credentials supplied by the auth argument group
 def authenticate(timeout, session_info, config_path, **kwargs):
+
+    settings_file = os.path.join(os.getcwd(),'settings.json')
+    with open(settings_file, 'r') as f:
+        settings = json.load(f)
+        timeout = settings.get('api_conn_timeout', timeout)
+        host = settings.get('host')
+        client_id = settings.get('client_id')
+        client_secret = settings.get('client_secret')
     auth_logger.info('Authenticating into Looker API')
     # precedence: --path, global config, default
     cleanpath = kwargs['path'] or config_path
-    if kwargs['client_id'] and kwargs['client_secret']:
+    print(client_id)
+    if client_id and client_secret:
         auth_logger.info('Fetching auth params passed in CLI')
-        host = kwargs['host']
-        client_id = kwargs['client_id']
-        client_secret = kwargs['client_secret']
         token = None
     else:
         auth_logger.info('Checking permissions for %s', cleanpath)
         st = os.stat(cleanpath)
         ap = oct(st.st_mode)
-        if ap != '0o100600':
-            print('Config file permissions are set to %s and are not strict '
-                  'enough. Change to rw------- or 600 and try again.' % ap)
-            auth_logger.warning('Config file permissions are %s and not strict'
-                                ' enough.' % ap)
-            sys.exit(1)
-        auth_logger.info('Opening config file from %s' % cleanpath)
+        # if ap != '0o100600':
+        #     print('Config file permissions are set to %s and are not strict '
+        #           'enough. Change to rw------- or 600 and try again.' % ap)
+        #     auth_logger.warning('Config file permissions are %s and not strict'
+        #                         ' enough.' % ap)
+        #     sys.exit(1)
+        # auth_logger.info('Opening config file from %s' % cleanpath)
         try:
             f = open(cleanpath, 'r')
-            params = yaml.load(f)
+            params = yaml.load(f, Loader=yaml.FullLoader)
             f.close()
         except FileNotFoundError as error:
             auth_logger.exception(error, exc_info=False)

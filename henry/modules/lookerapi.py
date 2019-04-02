@@ -116,6 +116,7 @@ class LookerApi(object):
                                                          'explores',
                                                          explore_name)
         params = fields
+        print(url)
         self.api_logger.info('Request to %s => GET /api/3.0/lookml_models/%s'
                              '/explores/%s, %s', self.host, model_name,
                              explore_name, params)

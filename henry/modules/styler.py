@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 # styler.py
 import logging
 from tabulate import tabulate
