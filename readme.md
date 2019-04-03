@@ -4,6 +4,35 @@
 # Henry: A Looker Cleanup Tool
 Henry is a command line tool that helps determine model bloat in your Looker instance and identify unused content in models and explores. It is meant to help developers cleanup models from unused explores and explores from unused joins and fields, as well as maintain a healthy and user-friendly instance.
 
+# Henry for Envoy
+
+At Envoy, we use Looker heavily and maintaining the cleanliness of our repo is crucial to our scalability and health of our code. With Henry and some pre-existing scripts, we now have the ability to identify unused models, explores and views which should help us tremendously with Looker cleanup.
+
+## Generating Looker API3 Keys
+In order to use Henry, you (an admin) will need to generate an API key for yourself. You can do this via the following steps; in Looker:
+1. Click on the Admin tab > Users
+2. Search for yourself as a user and click edit
+3. Under the first API3 Keys, hit "edit keys." From there, click "New API3 Key"
+
+You should know have a client_id and a client_secret.
+
+## Setting up Henry
+To use Henry, first clone this repo into your desired directory. From there, you'll need to run:
+
+    $ python setup.py develop
+
+You'll then need to create a `settings.json` file in the henry directory you just cloned the repo into. In here, you'll need to define a few items:
+
+    {
+      "api_conn_timeout": <desired_timeout>,
+      "host": <our_looker_host_domain>,
+      "client_id": <your_client_id_generated_above>,
+      "client_secret": <your_client_secret_generated_above>
+    }
+    
+It's important that these credentials for authentication are defined in a `settings.json` locally as .json files are in the .gitignore so we don't expose credentials.
+
+From here, you should be able to use Henry as described below. For any questions, reach out to [Jason Wang](https://github.com/jasonwang592)
 ## Table of Contents
 - [Henry: A Looker Cleanup Tool](#henry-a-looker-cleanup-tool)
     - [Table of Contents](#table-of-contents)
