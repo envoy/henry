@@ -24,7 +24,6 @@ def authenticate(timeout, session_info, config_path, **kwargs):
     auth_logger.info('Authenticating into Looker API')
     # precedence: --path, global config, default
     cleanpath = kwargs['path'] or config_path
-    print(client_id)
     if client_id and client_secret:
         auth_logger.info('Fetching auth params passed in CLI')
         token = None
