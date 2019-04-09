@@ -116,25 +116,31 @@ class Fetcher(object):
         return explores
 
     def get_explore_fields(self, explore=None, scoped_names=0):
-        self.fetch_logger.info('Parsing explore body for exposed fields')
+        self.fetch_logger.info('Parsing explore body for fields')
         fields = []
         for dimension in explore['fields']['dimensions']:
-            if dimension['hidden'] is not True:
-                fields.append((explore['model_name']+'.'
-                              + explore['name'] + '.')*scoped_names
-                              + dimension['name'])
+            # if dimension['hidden'] is not True:
+            fields.append((explore['model_name']+'.'
+                          + explore['name'] + '.')*scoped_names
+                          + dimension['name'])
         for measure in explore['fields']['measures']:
-            if measure['hidden'] is not True:
-                fields.append((explore['model_name']+'.'
-                              + explore['name']+'.')*scoped_names
-                              + measure['name'])
+            # if measure['hidden'] is not True:
+            fields.append((explore['model_name']+'.'
+                          + explore['name']+'.')*scoped_names
+                          + measure['name'])
         for fltr in explore['fields']['filters']:
-            if fltr['hidden'] is not True:
-                fields.append((explore['model_name']+'.'
-                              + explore['name']+'.')*scoped_names
-                              + fltr['name'])
+            # if fltr['hidden'] is not True:
+            fields.append((explore['model_name']+'.'
+                          + explore['name']+'.')*scoped_names
+                          + fltr['name'])
         self.fetch_logger.info('Parsing Complete')
         return list(set(fields))
+
+    def get_explore_field_stats(self, explore=None, scoped_names=0):
+        self.fetch_logger.info('Parsing explore body for fields')
+        fields = []
+        dim_count, measure_count, has_description = 0,0,0
+
 
     def get_unused_explores(self, model=None, timeframe=90, min_queries=0):
         self.fetch_logger.info('Fetching unused explores, %s', locals())
