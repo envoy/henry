@@ -65,6 +65,10 @@ class Vacuum(fetcher):
 
         return info
 
+    def _vacuum_fields(self, model=None, explore=None, timeframe=90,
+                        min_queries=0):
+        pass
+
     def _vacuum_explores(self, model=None, explore=None, timeframe=90,
                          min_queries=0):
         explores = fetcher.get_explores(self,
