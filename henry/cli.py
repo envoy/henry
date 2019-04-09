@@ -86,6 +86,7 @@ def main():
     analyze_projects = analyze_subparsers.add_parser('projects')
     analyze_models = analyze_subparsers.add_parser('models')
     analyze_explores = analyze_subparsers.add_parser('explores')
+    analyze_fields = analyze_subparsers.add_parser('fields')
 
     # project subcommand
     analyze_projects.set_defaults(which='projects')
@@ -164,6 +165,35 @@ def main():
                                   nargs=1,
                                   help='Limit results. No limit by default')
 
+    # fields subcommand
+    analyze_fields.set_defaults(which='fields')
+    analyze_fields.add_argument('-model', '--model',
+                                  type=str,
+                                  default=None,
+                                  required=('--explore') in sys.argv,
+                                  help='Filter on model')
+    analyze_fields.add_argument('-e', '--explore',
+                                  default=None,
+                                  help='Filter on model')
+    analyze_fields.add_argument('--timeframe',
+                                  type=int,
+                                  default=90,
+                                  help='Timeframe (between 0 and 90)')
+    analyze_fields.add_argument('--min_queries',
+                                  type=int,
+                                  default=0,
+                                  help='Query threshold')
+    analyze_fields.add_argument('--order_by',
+                                  nargs=2,
+                                  metavar=('ORDER_FIELD', 'ASC/DESC'),
+                                  dest='sortkey',
+                                  help='Sort results by a field')
+    analyze_fields.add_argument('--limit',
+                                  type=int,
+                                  default=None,
+                                  nargs=1,
+                                  help='Limit results. No limit by default')
+
     # VACUUM Subcommand
     vacuum_parser = subparsers.add_parser('vacuum', help='vacuum help',
                                           usage='henry vacuum')
@@ -171,6 +201,7 @@ def main():
     vacuum_subparsers = vacuum_parser.add_subparsers()
     vacuum_models = vacuum_subparsers.add_parser('models')
     vacuum_explores = vacuum_subparsers.add_parser('explores')
+    vacuum_fields = vacuum_subparsers.add_parser('fields')
     vacuum_models.set_defaults(which='models')
     vm_group = vacuum_models.add_mutually_exclusive_group()
     vm_group.add_argument('-p', '--project',
@@ -217,8 +248,29 @@ def main():
                                  default=0,
                                  help='Query threshold')
 
-    for subparser in [analyze_projects, analyze_models, analyze_explores,
-                      vacuum_models, vacuum_explores, pulse]:
+    vacuum_fields.set_defaults(which='fields')
+    vacuum_fields.add_argument('-m', '--model',
+                                 type=str,
+                                 default=None,
+                                 required=('--explore') in sys.argv,
+                                 help='Filter on model')
+
+    vacuum_fields.add_argument('-e', '--explore',
+                                 type=str,
+                                 default=None,
+                                 help='Filter on explore')
+
+    vacuum_fields.add_argument('--timeframe',
+                                 type=int,
+                                 default=90,
+                                 help='Timeframe (between 0 and 90)')
+
+    vacuum_fields.add_argument('--min_queries',
+                                 type=int,
+                                 default=0,
+                                 help='Query threshold')
+    for subparser in [analyze_projects, analyze_models, analyze_explores, analyze_fields,
+                      vacuum_models, vacuum_explores, vacuum_fields, pulse]:
         subparser.add_argument('--output',
                                type=str,
                                default=None,
