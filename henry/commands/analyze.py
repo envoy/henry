@@ -51,6 +51,20 @@ class Analyze(fetcher):
                                             limit=kwargs['limit'],
                                             timeframe=kwargs['timeframe'],
                                             min_queries=kwargs['min_queries'])
+        elif kwargs['which'] == 'fields':
+            params = {k: kwargs[k] for k in {'model',
+                                             'explore',
+                                             'timeframe',
+                                             'min_queries',
+                                             'sortkey',
+                                             'limit'}}
+            self.analyze_logger.info('analyze fields params=%s', )
+            result = self._analyze_fields(model=m,
+                                            explore=kwargs['explore'],
+                                            sortkey=kwargs['sortkey'],
+                                            limit=kwargs['limit'],
+                                            timeframe=kwargs['timeframe'],
+                                            min_queries=kwargs['min_queries'])
         self.analyze_logger.info('Analyze Complete')
 
         result = tabulate(result, headers=headers,
@@ -122,6 +136,11 @@ class Analyze(fetcher):
         info = styler.limit(info, limit=limit)
         return info
 
+    def _analyze_fields(self, model=None, explore=None,
+                        sortkey=None, limit=None,
+                        min_queries=0, timeframe=90):
+        pass
+
     def _analyze_explores(self, model=None, explore=None,
                           sortkey=None, limit=None,
                           min_queries=0, timeframe=90):
@@ -132,10 +151,10 @@ class Analyze(fetcher):
         explores_usage = {}
         info = []
         total = len(explores)
-        completed = 0
+        completed = 1
         for e in explores:
-            print('Parsing {}, {} of {} explores'.format(completed,
-                                                        e['model_name'],
+            print('Analyzing {}, {} of {} explores'.format(e,
+                                                        completed,
                                                         total))
             # in case explore does not exist (bug - #32748)
             if e is None:
