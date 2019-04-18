@@ -3,6 +3,7 @@ import logging
 from henry.modules import styler
 from henry.modules.fetcher import Fetcher as fetcher
 import re
+import sys
 
 
 class Vacuum(fetcher):
@@ -37,6 +38,17 @@ class Vacuum(fetcher):
                                            explore=kwargs['explore'],
                                            min_queries=kwargs['min_queries'],
                                            timeframe=kwargs['timeframe'])
+        if kwargs['which'] == 'fields':
+            self.vacuum_logger.info('Vacuuming Fields')
+            params = {k: kwargs[k] for k in {'model',
+                                             'explore',
+                                             'timeframe',
+                                             'min_queries'}}
+            self.vacuum_logger.info('vacuum fields params=%s', params),
+            result = self._vacuum_fields(model=m,
+                                           explore=kwargs['explore'],
+                                           min_queries=kwargs['min_queries'],
+                                           timeframe=kwargs['timeframe'])
         self.vacuum_logger.info('Vacuum Complete')
         result = styler.tabulate(result, headers=headers,
                                  tablefmt=format, numalign='center')
@@ -67,7 +79,71 @@ class Vacuum(fetcher):
 
     def _vacuum_fields(self, model=None, explore=None, timeframe=90,
                         min_queries=0):
-        pass
+        explores = fetcher.get_explores(self,
+                                        model=model,
+                                        explore=explore,
+                                        verbose=1)
+        info = []
+        master_exposed_fields = set()
+        master_used_fields = set()
+        distinct_views = set()
+        progress = 1
+        for e in explores:
+            print('Analyzing {}.{}, {} of {} explores'.format(e['model_name'],
+                                                                  e['name'],
+                                                                  progress,
+                                                                  len(explores)))
+            # get field usage from i__looker using all the views inside explore
+            # returns fields in the form of model.explore.view.field
+            _used_fields = fetcher.get_used_explore_fields(self,
+                                                           e['model_name'],
+                                                           e['scopes'],
+                                                           timeframe,
+                                                           min_queries)
+            used_fields = list(_used_fields.keys())
+
+            # get field picker fields in the form of model.explore.view.field
+            exposed_fields = fetcher.get_explore_fields(self,
+                                                        explore=e,
+                                                        scoped_names=1)
+            _unused_fields = set(exposed_fields) - set(used_fields)
+
+            # Get fields used in joins
+            for join in e['joins']:
+                f = re.findall('\{(.*?)\}',join['sql_on'])
+                for field in f:
+                    master_used_fields.add(field)
+                    distinct_views.add(field.split('.')[0])
+            #Get used fields
+            for field in used_fields:
+                field = '.'.join(field.split('.')[2:])
+                master_exposed_fields.add(field)
+                distinct_views.add(field.split('.')[0])
+            #Get all fields
+            for field in exposed_fields:
+                #strip out the model and explore
+                field = '.'.join(field.split('.')[2:])
+                master_exposed_fields.add(field)
+                distinct_views.add(field.split('.')[0])
+            progress += 1
+
+        # Get all unused fields and then organize them by their view
+        master_unused_fields = master_exposed_fields-master_used_fields
+        for view in sorted(list(distinct_views)):
+            unused_fields = []
+            for field in master_unused_fields:
+                if field.split('.')[0] == view:
+                    unused_fields.append(field)
+            unused_fields = ('\n').join(unused_fields)
+            info.append({
+                        'view': view,
+                        'unused_fields': unused_fields
+                        })
+
+        if not info:
+            self.vacuum_logger.error('No matching explores found')
+            raise Exception('No matching explores found')
+        return info
 
     def _vacuum_explores(self, model=None, explore=None, timeframe=90,
                          min_queries=0):

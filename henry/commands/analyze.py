@@ -207,7 +207,7 @@ class Analyze(fetcher):
         total = len(explores)
         completed = 1
         for e in explores:
-            print('Analyzing {}, {} of {} explores'.format(e,
+            print('Analyzing {}, {} of {} explores'.format(e['name'],
                                                         completed,
                                                         total))
             # in case explore does not exist (bug - #32748)
