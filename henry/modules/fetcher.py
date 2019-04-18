@@ -181,7 +181,7 @@ class Fetcher(object):
                         "query.model": m,
                         "query.view": e,
                         "history.query_run_count": min_queries},
-            "limit": "50000"
+            "limit": "100000"
         }
         # returns only fields used from a given explore
         response = self.looker.run_inline_query("json", body)

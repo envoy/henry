@@ -110,14 +110,15 @@ class Vacuum(fetcher):
 
             # Get fields used in joins
             for join in e['joins']:
-                f = re.findall('\{(.*?)\}',join['sql_on'])
-                for field in f:
-                    master_used_fields.add(field)
-                    distinct_views.add(field.split('.')[0])
+                if join['sql_on'] is not None:
+                    f = re.findall('\{(.*?)\}',join['sql_on'])
+                    for field in f:
+                        master_used_fields.add(field)
+                        distinct_views.add(field.split('.')[0])
             #Get used fields
             for field in used_fields:
                 field = '.'.join(field.split('.')[2:])
-                master_exposed_fields.add(field)
+                master_used_fields.add(field)
                 distinct_views.add(field.split('.')[0])
             #Get all fields
             for field in exposed_fields:
@@ -127,19 +128,30 @@ class Vacuum(fetcher):
                 distinct_views.add(field.split('.')[0])
             progress += 1
 
+        # Fields to ignore if they contain the following:
+        ignore_list = ['week','quarter','year','month','raw','date','time']
+
         # Get all unused fields and then organize them by their view
         master_unused_fields = master_exposed_fields-master_used_fields
         for view in sorted(list(distinct_views)):
+            if any(char.isdigit() for char in view):
+                continue
             unused_fields = []
             for field in master_unused_fields:
+                # always keep id fields and basic count fields
+                field_name = field.split('.')[1]
+                if field_name == 'id' or field_name == 'count' or 'id' in field_name.split('_'):
+                    continue
+                elif any(ignore in field for ignore in ignore_list):
+                    continue
                 if field.split('.')[0] == view:
                     unused_fields.append(field)
             unused_fields = ('\n').join(unused_fields)
-            info.append({
-                        'view': view,
-                        'unused_fields': unused_fields
-                        })
-
+            if unused_fields is not None:
+                info.append({
+                            'view': view,
+                            'unused_fields': unused_fields
+                            })
         if not info:
             self.vacuum_logger.error('No matching explores found')
             raise Exception('No matching explores found')
