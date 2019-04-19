@@ -51,6 +51,20 @@ class Analyze(fetcher):
                                             limit=kwargs['limit'],
                                             timeframe=kwargs['timeframe'],
                                             min_queries=kwargs['min_queries'])
+        elif kwargs['which'] == 'fields':
+            params = {k: kwargs[k] for k in {'model',
+                                             'explore',
+                                             'timeframe',
+                                             'min_queries',
+                                             'sortkey',
+                                             'limit'}}
+            self.analyze_logger.info('analyze fields params=%s', )
+            result = self._analyze_fields(model=m,
+                                            explore=kwargs['explore'],
+                                            sortkey=kwargs['sortkey'],
+                                            limit=kwargs['limit'],
+                                            timeframe=kwargs['timeframe'],
+                                            min_queries=kwargs['min_queries'])
         self.analyze_logger.info('Analyze Complete')
 
         result = tabulate(result, headers=headers,
@@ -122,6 +136,65 @@ class Analyze(fetcher):
         info = styler.limit(info, limit=limit)
         return info
 
+    def _analyze_fields(self, model=None, explore=None,
+                        sortkey=None, limit=None,
+                        min_queries=0, timeframe=90):
+
+        print('Retrieving explores for fields...')
+        explores = fetcher.get_explores(self, model=model,
+                                        explore=explore, verbose=1)
+        info = []
+        progress = 1
+        for e in explores:
+            print('Analyzing {}.{}, {} of {} explores'.format(e['model_name'],
+                                                              e['name'],
+                                                              progress,
+                                                              len(explores)))
+            if e is None:
+                pass
+            else:
+                _used_fields = fetcher.get_used_explore_fields(self,
+                                                               e['model_name'],
+                                                               e['scopes'],
+                                                               timeframe,
+                                                               min_queries)
+                used_fields = list(_used_fields.keys())
+                exposed_fields = fetcher.get_explore_fields(self,
+                                                    explore=e,
+                                                    scoped_names=1)
+                unused_fields = set(exposed_fields) - set(used_fields)
+                field_count = len(exposed_fields)
+
+                missing_description = 0
+                dimensions = 0
+                measures = 0
+                for dim in e['fields']['dimensions']:
+                    dimensions += 1
+                    if not dim['description']:
+                        missing_description += 1
+                for measure in e['fields']['measures']:
+                    measures += 1
+                    if not measure['description']:
+                        missing_description += 1
+
+                info.append({
+                    'model': e['model_name'],
+                    'explore': e['name'],
+                    'field_count': field_count,
+                    'unused_fields': len(unused_fields),
+                    'missing_description': missing_description,
+                    'dimensions': dimensions,
+                    'measures': measures
+                })
+                progress += 1
+        if not info:
+            self.analyze_logger.error('No matching explores found')
+            raise Exception('No matching explores found')
+        valid_values = list(info[0].keys())
+        info = styler.sort(info, valid_values, sortkey)
+        info = styler.limit(info, limit=limit)
+        return info
+
     def _analyze_explores(self, model=None, explore=None,
                           sortkey=None, limit=None,
                           min_queries=0, timeframe=90):
@@ -132,10 +205,10 @@ class Analyze(fetcher):
         explores_usage = {}
         info = []
         total = len(explores)
-        completed = 0
+        completed = 1
         for e in explores:
-            print('Parsing {}, {} of {} explores'.format(completed,
-                                                        e['model_name'],
+            print('Analyzing {}, {} of {} explores'.format(e['name'],
+                                                        completed,
                                                         total))
             # in case explore does not exist (bug - #32748)
             if e is None:
