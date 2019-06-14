@@ -3,6 +3,11 @@ from . import styler
 from collections import Counter
 import logging
 import re
+import sys
+reload(sys)
+
+sys.setdefaultencoding('utf-8')
+
 
 
 class Fetcher(object):
